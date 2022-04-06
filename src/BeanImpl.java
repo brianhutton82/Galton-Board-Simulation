@@ -30,6 +30,12 @@ public class BeanImpl implements Bean {
 	
 	// TODO: Add more member variables as needed
 	private int xpos;
+	private int skillLevel;
+	private int skillRemaining;
+	private double skillAverage;
+	private double skillStdDev;
+	private boolean isLucky;
+	private Random rng;
 
 	/**
 	 * Constructor - creates a bean in either luck mode or skill mode.
@@ -40,6 +46,25 @@ public class BeanImpl implements Bean {
 	 */
 	BeanImpl(int slotCount, boolean isLuck, Random rand) {
 		// TODO: Implement
+		 this.isLucky = isLuck;
+ 		this.rng = rand;
+ 		this.xpos = 0;
+
+ 		// calculations for skill level if in skill mode
+		this.skillAverage = (double) (slotCount-1) * 0.5;
+ 		this.skillStdDev = (double) Math.sqrt(slotCount * 0.5 * (1 - 0.5));
+ 		this.skillLevel = (int) Math.round(rand.nextGaussian() * this.skillStdDev + this.skillAverage);
+
+ 		// Maximum skill level must be equal to the number of slots
+ 		if(this.skillLevel > (slotCount - 1)){
+ 			this.skillLevel = slotCount - 1;
+ 		}
+
+ 		// Minimum skill level is 0
+ 		if(this.skillLevel < 0){
+ 			this.skillLevel = 0;
+ 		}
+ 		this.skillRemaining = this.skillLevel;
 	}
 	
 	/**
@@ -49,7 +74,7 @@ public class BeanImpl implements Bean {
 	 */
 	public int getXPos() {
 		// TODO: Implement
-		return 0;
+		return this.xpos;
 	}
 
 	/**
@@ -58,6 +83,8 @@ public class BeanImpl implements Bean {
 	 */
 	public void reset() {
 		// TODO: Implement
+		this.skillRemaining = this.skillLevel;
+		this.xpos = 0;
 	}
 	
 	/**
@@ -67,5 +94,27 @@ public class BeanImpl implements Bean {
 	 */
 	public void choose() {
 		// TODO: Implement
+
+		// if luck mode is chosen, generate a random num betwen 0 and 1 to decide which way to go
+		if(this.isLucky){
+			int leftOrRight = this.rng.nextInt(2);
+			if(leftOrRight == 0){
+				// if rng returns 0, go left
+				this.xpos--;
+			} else {
+				// otherwise if rng does not return 0, go right
+				this.xpos++;
+			}
+		} else {
+			// if skill mode is chosen
+			if(skillRemaining > 0){
+				// if skill remaining, then go right
+				this.xpos++;
+				this.skillRemaining--;
+			} else {
+				// if no skill remaining, go left
+				this.xpos--;
+			}
+		}
 	}
 }

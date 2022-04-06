@@ -1,5 +1,7 @@
 import java.util.Formatter;
 import java.util.Random;
+import java.util.LinkedList;
+import java.util.Arrays;
 
 /**
  * Code by @author Wonsun Ahn
@@ -27,7 +29,14 @@ import java.util.Random;
  */
 
 public class BeanCounterLogicImpl implements BeanCounterLogic {
-	// TODO: Add member methods and variables as needed
+	// Member variables & data structures
+	private int totalSlots; // total slots indicated by user upon initializing a BeanCounterLogic object
+	private int xspacing; // var for printing out state of machine
+	private int totalBeans; // total number of beans being poured into Galton board
+	private ArrayList<Integer> slots; // used to keep track of number of beans in each slot
+	private Bean[] movingBeans; // beans moving on Galton Board
+	private LinkedList<Bean> remainingBeans; // beans that have not yet went down the Galton Board
+	private LinkedList<Bean>[] slots; // array of linked lists of Beans, where each LinkedList in this array represents the corresponding slot
 
 	/**
 	 * Constructor - creates the bean counter logic object that implements the core
@@ -36,7 +45,25 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @param slotCount the number of slots in the machine
 	 */
 	BeanCounterLogicImpl(int slotCount) {
-		// TODO: Implement
+		// spacing between
+		this.xspacing = 3;
+
+		// Total Slots on the Galton Board
+		this.totalSlots = slotCount;
+
+		// Array of Beans falling down Galton Board
+		this.movingBeans = new Bean[slotCount];
+
+		// Linked List of Beans that have not yet went down Galton Board
+		this.remainingBeans = new LinkedList<>();
+
+		// array of linked lists of Beans
+		this.slots = new LinkedList[slotCount];
+		
+		// each entry in the array contains a list of Beans in the respective slot
+		for(int i=0; i < totalSlots; i++){
+			this.slots[i] = new LinkedList<>();
+		}
 	}
 
 	/**
@@ -45,8 +72,8 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @return number of slots
 	 */
 	public int getSlotCount() {
-		// TODO: Implement
-		return 1;
+		// when the BeanCounterLogicImpl object was initialized it was passed a number of slots, which I saved to this member variable
+		return this.totalSlots;
 	}
 	
 	/**
@@ -55,8 +82,8 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @return number of beans remaining
 	 */
 	public int getRemainingBeanCount() {
-		// TODO: Implement
-		return 0;
+		// return number of beans in LinkedList of beans not yet in slots or on the Galton Board
+		return this.remainingBeans.size();
 	}
 
 	/**
@@ -66,8 +93,13 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @return the x-coordinate of the in-flight bean; if no bean in y-coordinate, return NO_BEAN_IN_YPOS
 	 */
 	public int getInFlightBeanXPos(int yPos) {
-		// TODO: Implement
-		return NO_BEAN_IN_YPOS;
+		if(this.movingBeans[yPos] != null){
+			// if a bean is on the Galton Board at the indicated yPos, call get the beans x position
+			return this.movingBeans[yPos].getXPos();
+		} else {
+			// otherwise there was no bean on the Galton Board at yPos
+			return NO_BEAN_IN_YPOS;
+		}	
 	}
 
 	/**
@@ -77,8 +109,13 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @return number of beans in slot
 	 */
 	public int getSlotBeanCount(int i) {
-		// TODO: Implement
-		return 0;
+		// get the size of the LinkedList at slot i if i is within the range of possible slots
+		if(i >= 0 && i < getSlotCount()){
+			return this.slots[i].size();
+		} else {
+			// otherwise return 0 since the slot doesn't exist (e.g. there are no beans in a non-existing slot)
+			return 0
+		}
 	}
 
 	/**
@@ -87,8 +124,20 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @return Average slot number of all the beans in slots.
 	 */
 	public double getAverageSlotBeanCount() {
-		// TODO: Implement
-		return 0;
+		// the average number of beans will be the total of beans in slots divided by the total number of slots
+		int numerator = 0;
+		double denominator = 0.0;
+		for(int i=0; i < this.getSlotCount(); i++){
+			numerator += (i * getSlotBeanCount(i));
+			denominator += getSlotBeanCount(i);
+		}
+
+		// we don't want to divide by zero... the whole world may implode
+		if(denominator > 0){
+			return denominator / numerator;
+		} else {
+			return 0;
+		}
 	}
 
 	/**
@@ -98,7 +147,28 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * will be remaining.
 	 */
 	public void upperHalf() {
-		// TODO: Implement
+		// First, determine the total number of beans in the slots
+		int totalBeansInSlots = 0;
+
+		// iterate through the slots, adding the total beans in each slot to the running total
+		for(int i=0; i < getSlotCount(); i++){
+			totalBeansInSlots += getSlotBeanCount(i);
+		}
+
+		// now that we have the total number of beans in the slots we need to determine how many beans to remove
+		// if there is an even number of beans in the slots then just remove half, otherwise remove (n-1)/2 beans
+		int beansToRemove = (totalBeansInSlots % 2) == 0 ? (totalBeansInSlots/2) : ((totalBeansInSlots-1)/2);
+
+		// start removing beans from slots starting at the lower end of the slots while there are still beans to remove
+		for(int i=0; i < getSlotCount(); i++){
+			// while there are beans still in the current linkedlist and there are still beans to remove
+			while((!this.slots[i].isEmpty()) && beansToRemove > 0){
+				this.slots[i].pop(); // remove a bean from the slot
+				beansToRemove--; // one less bean to remove
+			}
+			if(beansToRemove == 0)
+				break;
+		}
 	}
 
 	/**
@@ -108,7 +178,28 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * will be remaining.
 	 */
 	public void lowerHalf() {
-		// TODO: Implement
+		// First, determine the total number of beans in the slots
+		int totalBeansInSlots = 0;
+
+		// iterate through the slots, adding the total beans in each slot to the running total
+		for(int i=0; i < this.slots.length; i++){
+			totalBeansInSlots += getSlotBeanCount(i);
+		}
+
+		// now that we have the total number of beans in the slots we need to determine how many beans to remove
+		// if there is an even number of beans in the slots then just remove half, otherwise remove (n-1)/2 beans
+		int beansToRemove = (totalBeansInSlots % 2) == 0 ? (totalBeansInSlots/2) : ((totalBeansInSlots-1)/2);
+
+		// start removing beans from slots starting at the upper end of the slots while there are still beans to remove
+		for(int i = getSlotCount() - 1; i >= 0; i--){
+			// while there are beans still in the current linkedlist and there are still beans to remove
+			while((!this.slots[i].isEmpty()) && beansToRemove > 0){
+				this.slots[i].pop();
+				beansToRemove--;
+			}
+			if(beansToRemove == 0)
+				break;
+		}
 	}
 
 	/**
@@ -118,7 +209,14 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @param beans array of beans to add to the machine
 	 */
 	public void reset(Bean[] beans) {
-		// TODO: Implement
+		// first remove all beans from the slots
+
+		// ~~~!!! STOPPED WORKING HERE !!!~~~
+		
+		for(int i=0; i < getSlotCount(); i++){
+			this.slots[i].clear();
+		}
+
 	}
 
 	/**
@@ -147,7 +245,6 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * Number of spaces in between numbers when printing out the state of the machine.
 	 * Make sure the number is odd (even numbers don't work as well).
 	 */
-	private int xspacing = 3;
 
 	/**
 	 * Calculates the number of spaces to indent for the given row of pegs.
@@ -226,6 +323,7 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 		boolean luck;
 		int slotCount = 0;
 		int beanCount = 0;
+		//this.totalBeans = beanCount;
 
 		if (args.length != 3 && args.length != 4) {
 			showUsage();

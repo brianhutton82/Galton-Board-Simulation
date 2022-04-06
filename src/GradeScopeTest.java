@@ -146,6 +146,17 @@ public class GradeScopeTest {
 	@Test
 	public void testAdvanceStepLuckMode() {
 		// TODO: Implement
+		for (int i = 0; i < logics.length; i++) {
+			for (int beanCount : beanCounts) {
+				Bean[] beans = createBeans(logicSlotCounts[i], beanCount, true);
+				logics[i].reset(beans);
+				while(logics[i].advanceStep()){
+					// remaining bean count invariant
+					// in-flight bean count invariant
+					// in-slot bean count invariant
+				}
+			}
+		}
 	}
 
 	/**
