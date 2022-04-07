@@ -32,7 +32,6 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	private int totalSlots; // total slots indicated by user upon initializing a BeanCounterLogic object
 	private int xspacing; // var for printing out state of machine
 	private int totalBeans; // total number of beans being poured into Galton board
-	private ArrayList<Integer> slots; // used to keep track of number of beans in each slot
 	private Bean[] movingBeans; // beans moving on Galton Board
 	private LinkedList<Bean> remainingBeans; // beans that have not yet went down the Galton Board
 	private LinkedList<Bean>[] slots; // array of linked lists of Beans, where each LinkedList in this array represents the corresponding slot
@@ -239,9 +238,9 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 		// also remove all beans on the Galton Board
 		for(int i=0; i < getSlotCount(); i++){
 			this.remainingBeans.addAll(this.slots[i]);
-			this.slots[b].clear();
+			this.slots[i].clear();
 			this.remainingBeans.add(this.movingBeans[i]);
-			this.moveBeans[i] = null;
+			this.movingBeans[i] = null;
 		}
 
 		// remove bean from remainingBeans and add to top of Galton board
