@@ -114,7 +114,7 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 			return this.slots[i].size();
 		} else {
 			// otherwise return 0 since the slot doesn't exist (e.g. there are no beans in a non-existing slot)
-			return 0
+			return 0;
 		}
 	}
 
