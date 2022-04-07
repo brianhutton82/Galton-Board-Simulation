@@ -1,7 +1,6 @@
 import java.util.Formatter;
 import java.util.Random;
 import java.util.LinkedList;
-import java.util.Arrays;
 
 /**
  * Code by @author Wonsun Ahn
@@ -95,6 +94,7 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	public int getInFlightBeanXPos(int yPos) {
 		if(this.movingBeans[yPos] != null){
 			// if a bean is on the Galton Board at the indicated yPos, call get the beans x position
+			// since only one bean can be at a given y position, we only need an array the size of the number of slots to keep track of which beans are on the Galton board
 			return this.movingBeans[yPos].getXPos();
 		} else {
 			// otherwise there was no bean on the Galton Board at yPos
@@ -210,13 +210,23 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 */
 	public void reset(Bean[] beans) {
 		// first remove all beans from the slots
-
-		// ~~~!!! STOPPED WORKING HERE !!!~~~
-		
+		// and remove all beans on the Galton Board
 		for(int i=0; i < getSlotCount(); i++){
 			this.slots[i].clear();
+			this.movingBeans[i] = null;
 		}
 
+		// clear all remaining beans
+		this.remainingBeans.clear();
+
+		// add all beans to remaining beans now that everything is cleared
+		for(int i=0; i < beans.length; i++){
+			this.remainingBeans.add(beans[i]);
+		}
+
+		// remove a bean from remainingBeans if there are any remaining and add to top of Galton board
+		if(this.remainingBeans.size() > 0)
+			this.movingBeans[0] = this.remainingBeans.remove();
 	}
 
 	/**
@@ -225,7 +235,18 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * beginning, the machine starts with one bean at the top.
 	 */
 	public void repeat() {
-		// TODO: Implement
+		// remove all beans from slots and add to remainingBeans
+		// also remove all beans on the Galton Board
+		for(int i=0; i < getSlotCount(); i++){
+			this.remainingBeans.addAll(this.slots[i]);
+			this.slots[b].clear();
+			this.remainingBeans.add(this.movingBeans[i]);
+			this.moveBeans[i] = null;
+		}
+
+		// remove bean from remainingBeans and add to top of Galton board
+		if(this.remainingBeans.size() > 0)
+			this.movingBeans[0] = this.remainingBeans.remove();
 	}
 
 	/**
@@ -237,8 +258,33 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 *         means the machine is finished.
 	 */
 	public boolean advanceStep() {
-		// TODO: Implement
-		return false;
+		boolean result = false;
+		// increment each beans position on Galton Board, only one bean can be at a given y position at a time
+		// start from bottom of board and move towards top
+		for(int i=(getSlotCount()-1); i >= 0; i--){
+			Bean b = movingBeans[i];
+			// if there is a bean in this y-position move it appropriately
+			if(b != null){
+				// if bean is falling off of the last row, add to slot[beans x position], also remove the bean from the Galton board
+				if(i == (getSlotCount()-1)){
+					this.slots[b.getXPos()].add(b);
+				} else {
+					// otherwise have the bean choose whether to go left or right, and increment its position in the movingBeans array
+					b.choose();
+					movingBeans[i+1] = b;
+				}
+				movingBeans[i] = null;
+				result = true;
+			} else if(i < (getSlotCount()-1)) {
+				// if there was not a bean in that y-position, then there won't be a bean in the next y position
+				this.movingBeans[i+1] = null;
+			}
+		}
+
+		// after finished moving all the beans on the board, add another bean to the top if there are beans remaining
+		if(this.remainingBeans.size() > 0){
+			this.movingBeans[0] = this.remainingBeans.remove();
+		}
 	}
 	
 	/**

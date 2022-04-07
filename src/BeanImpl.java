@@ -28,7 +28,7 @@ import java.util.Random;
 
 public class BeanImpl implements Bean {
 	
-	// TODO: Add more member variables as needed
+	private int slotCount;
 	private int xpos;
 	private int skillLevel;
 	private int skillRemaining;
@@ -45,8 +45,8 @@ public class BeanImpl implements Bean {
 	 * @param rand		the random number generator
 	 */
 	BeanImpl(int slotCount, boolean isLuck, Random rand) {
-		// TODO: Implement
-		 this.isLucky = isLuck;
+		this.slotCount = slotCount;
+		this.isLucky = isLuck;
  		this.rng = rand;
  		this.xpos = 0;
 
@@ -93,26 +93,24 @@ public class BeanImpl implements Bean {
 	 * right.  The X-coordinate is updated accordingly.
 	 */
 	public void choose() {
-		// TODO: Implement
-
 		// if luck mode is chosen, generate a random num betwen 0 and 1 to decide which way to go
 		if(this.isLucky){
 			int leftOrRight = this.rng.nextInt(2);
-			if(leftOrRight == 0){
-				// if rng returns 0, go left
+			if(leftOrRight == 0 && getXPos() > 0){
+				// if rng returns 0 and the bean is not in the left most x position, go left
 				this.xpos--;
-			} else {
-				// otherwise if rng does not return 0, go right
+			} else if(leftOrRight != 0 && getXPos() < (this.slotCount-1)){
+				// otherwise if rng does not return 0 and bean is not in rightmost position, go right
 				this.xpos++;
 			}
 		} else {
 			// if skill mode is chosen
-			if(skillRemaining > 0){
-				// if skill remaining, then go right
+			if(skillRemaining > 0 && getXPos() < (this.slotCount-1)){
+				// if skill remaining and bean is not in rightmost position, then go right
 				this.xpos++;
 				this.skillRemaining--;
-			} else {
-				// if no skill remaining, go left
+			} else if(skillRemaining == 0 && getXPos() > 0){
+				// if no skill remaining and bean is not in leftmost position, then go left
 				this.xpos--;
 			}
 		}

@@ -146,14 +146,26 @@ public class GradeScopeTest {
 	@Test
 	public void testAdvanceStepLuckMode() {
 		// TODO: Implement
+		boolean result = false;
 		for (int i = 0; i < logics.length; i++) {
 			for (int beanCount : beanCounts) {
 				Bean[] beans = createBeans(logicSlotCounts[i], beanCount, true);
 				logics[i].reset(beans);
-				while(logics[i].advanceStep()){
-					// remaining bean count invariant
-					// in-flight bean count invariant
-					// in-slot bean count invariant
+				result = logics[i].advanceStep();
+				int iteration = 0;
+				while(result){
+					int remainingObserved = logics[i].getRemainingBeanCount();
+					int inFlightObserved = getInFlightBeanCount(logics[i], logicSlotCounts[i]);
+					int inSlotsObserved = getInSlotsBeanCount(logics[i], logicSlotCounts[i]);
+					int remainingExpected = (beanCount > 0) ? (beanCount - iteration) : 0;
+					int inFlightExpected = ; //not sure what this should be
+					int inSlotsExpected = (beanCount > 0) ? () : 0; // irritated and confused at this point
+					
+					assertEquals(remainingObserved, remainingExpected);
+					assertEquals(inFlightObserved, inFlightExpected);
+					assertEquals(inSlotsObserved, inSlotsExpected);
+					result = logics[i].advanceStep();
+					iteration++;
 				}
 			}
 		}
