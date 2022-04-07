@@ -278,6 +278,7 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 				// if there was not a bean in that y-position, then there won't be a bean in the next y position
 				this.movingBeans[i+1] = null;
 			}
+			return result;
 		}
 
 		// after finished moving all the beans on the board, add another bean to the top if there are beans remaining
