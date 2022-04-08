@@ -151,15 +151,32 @@ public class GradeScopeTest {
 			for (int beanCount : beanCounts) {
 				Bean[] beans = createBeans(logicSlotCounts[i], beanCount, true);
 				logics[i].reset(beans);
+
 				result = logics[i].advanceStep();
 				int iteration = 0;
 				while(result){
-					int remainingObserved = logics[i].getRemainingBeanCount();
 					int inFlightObserved = getInFlightBeanCount(logics[i], logicSlotCounts[i]);
 					int inSlotsObserved = getInSlotsBeanCount(logics[i], logicSlotCounts[i]);
+					int remainingObserved = logics[i].getRemainingBeanCount();
+					
+					
+					int inFlightExpected;
+					if(iteration < logicSlotCounts[i]){
+						// if we have not dropped as many beans as there are slots then there are as many beans on the board as the number of iterations
+						inFlightExpected = iteration;
+					} else if(iteration > beanCount){
+						// if we have no more beans to drop then there must be less than a number of beans less than the number of slots on the board
+						inFlightExpected = logicSlotCounts[i] - (iteration - beanCount);
+					} else {
+						// otherwise we have the maximum number of beans on the board, which is the number of slots
+						inFlightExpected = logicSlotCounts[i];
+					}
+
+					// if we have dropped more beans than there are slots, then we have some beans in slots, otherwise do not have any beans in the slots
+					int inSlotsExpected = (iteration > logicSlotCounts[i]) ? (iteration - logicSlotCounts[i]) : 0;
+					
+					// totalbeans = beans not yet dropped + beans on board + beans in slots
 					int remainingExpected = (beanCount > 0) ? (beanCount - iteration) : 0;
-					int inFlightExpected = ; //not sure what this should be
-					int inSlotsExpected = (beanCount > 0) ? () : 0; // irritated and confused at this point
 					
 					assertEquals(remainingObserved, remainingExpected);
 					assertEquals(inFlightObserved, inFlightExpected);
