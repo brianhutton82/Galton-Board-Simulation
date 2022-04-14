@@ -34,7 +34,7 @@ public class BeanImpl implements Bean {
 	private int skillRemaining;
 	private double skillAverage;
 	private double skillStdDev;
-	private boolean isLucky;
+	private boolean isLuck;
 	private Random rng;
 
 	/**
@@ -46,24 +46,14 @@ public class BeanImpl implements Bean {
 	 */
 	BeanImpl(int slotCount, boolean isLuck, Random rand) {
 		this.slotCount = slotCount;
-		this.isLucky = isLuck;
+		this.isLuck = isLuck;
  		this.rng = rand;
  		this.xpos = 0;
-
- 		// calculations for skill level if in skill mode
 		this.skillAverage = (double) (slotCount-1) * 0.5;
  		this.skillStdDev = (double) Math.sqrt(slotCount * 0.5 * (1 - 0.5));
  		this.skillLevel = (int) Math.round(rand.nextGaussian() * this.skillStdDev + this.skillAverage);
-
- 		// Maximum skill level must be equal to the number of slots
- 		if(this.skillLevel > (slotCount - 1)){
- 			this.skillLevel = slotCount - 1;
- 		}
-
- 		// Minimum skill level is 0
- 		if(this.skillLevel < 0){
- 			this.skillLevel = 0;
- 		}
+ 		this.skillLevel = (this.skillLevel > (slotCount -1)) ? (slotCount-1) : this.skillLevel;
+ 		this.skillLevel = (this.skillLevel < 0) ? 0 : this.skillLevel;
  		this.skillRemaining = this.skillLevel;
 	}
 	
@@ -73,7 +63,6 @@ public class BeanImpl implements Bean {
 	 * @return the current X-coordinate of the bean
 	 */
 	public int getXPos() {
-		// TODO: Implement
 		return this.xpos;
 	}
 
@@ -82,7 +71,6 @@ public class BeanImpl implements Bean {
 	 * to 0. 
 	 */
 	public void reset() {
-		// TODO: Implement
 		this.skillRemaining = this.skillLevel;
 		this.xpos = 0;
 	}
@@ -93,26 +81,14 @@ public class BeanImpl implements Bean {
 	 * right.  The X-coordinate is updated accordingly.
 	 */
 	public void choose() {
-		// if luck mode is chosen, generate a random num betwen 0 and 1 to decide which way to go
-		if(this.isLucky){
+		if(this.isLuck) {
 			int leftOrRight = this.rng.nextInt(2);
-			if(leftOrRight == 0 && getXPos() > 0){
-				// if rng returns 0 and the bean is not in the left most x position, go left
-				this.xpos--;
-			} else if(leftOrRight != 0 && getXPos() < (this.slotCount-1)){
-				// otherwise if rng does not return 0 and bean is not in rightmost position, go right
+			if(leftOrRight == 1){
 				this.xpos++;
 			}
-		} else {
-			// if skill mode is chosen
-			if(skillRemaining > 0 && getXPos() < (this.slotCount-1)){
-				// if skill remaining and bean is not in rightmost position, then go right
-				this.xpos++;
-				this.skillRemaining--;
-			} else if(skillRemaining == 0 && getXPos() > 0){
-				// if no skill remaining and bean is not in leftmost position, then go left
-				this.xpos--;
-			}
+		} else if(this.skillRemaining > 0) {
+			this.xpos++;
+			this.skillLevel--;
 		}
 	}
 }

@@ -1,6 +1,6 @@
 import java.util.Formatter;
 import java.util.Random;
-import java.util.LinkedList;
+import java.util.ArrayList;
 
 /**
  * Code by @author Wonsun Ahn
@@ -29,12 +29,12 @@ import java.util.LinkedList;
 
 public class BeanCounterLogicImpl implements BeanCounterLogic {
 	// Member variables & data structures
-	private int totalSlots; // total slots indicated by user upon initializing a BeanCounterLogic object
-	private int xspacing; // var for printing out state of machine
-	private int totalBeans; // total number of beans being poured into Galton board
-	private Bean[] movingBeans; // beans moving on Galton Board
-	private LinkedList<Bean> remainingBeans; // beans that have not yet went down the Galton Board
-	private LinkedList<Bean>[] slots; // array of linked lists of Beans, where each LinkedList in this array represents the corresponding slot
+	private int totalSlots;
+	private int xspacing;
+	private int totalBeans;
+	private Bean[] beansOnBoard;
+	private ArrayList<Bean> remainingBeans;
+	private ArrayList<ArrayList<Bean>> beansInSlots;
 
 	/**
 	 * Constructor - creates the bean counter logic object that implements the core
@@ -43,24 +43,14 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @param slotCount the number of slots in the machine
 	 */
 	BeanCounterLogicImpl(int slotCount) {
-		// spacing between
+		assert slotCount >= 0;
 		this.xspacing = 3;
-
-		// Total Slots on the Galton Board
 		this.totalSlots = slotCount;
-
-		// Array of Beans falling down Galton Board
-		this.movingBeans = new Bean[slotCount];
-
-		// Linked List of Beans that have not yet went down Galton Board
-		this.remainingBeans = new LinkedList<>();
-
-		// array of linked lists of Beans
-		this.slots = new LinkedList[slotCount];
-		
-		// each entry in the array contains a list of Beans in the respective slot
-		for(int i=0; i < totalSlots; i++){
-			this.slots[i] = new LinkedList<>();
+		this.beansOnBoard = new Bean[slotCount];
+		this.remainingBeans = new ArrayList<Bean>(slotCount);
+		this.beansInSlots = new ArrayList<>(slotCount);
+		for(int i=0; i < slotCount; i++){
+			this.beansInSlots.add(new ArrayList<Bean>());
 		}
 	}
 
@@ -70,7 +60,6 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @return number of slots
 	 */
 	public int getSlotCount() {
-		// when the BeanCounterLogicImpl object was initialized it was passed a number of slots, which I saved to this member variable
 		return this.totalSlots;
 	}
 	
@@ -80,8 +69,8 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @return number of beans remaining
 	 */
 	public int getRemainingBeanCount() {
-		// return number of beans in LinkedList of beans not yet in slots or on the Galton Board
-		return this.remainingBeans.size();
+		int beansLeft = (this.remainingBeans != null) ? this.remainingBeans.size() : 0;
+		return beansLeft;
 	}
 
 	/**
@@ -91,14 +80,8 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @return the x-coordinate of the in-flight bean; if no bean in y-coordinate, return NO_BEAN_IN_YPOS
 	 */
 	public int getInFlightBeanXPos(int yPos) {
-		if(this.movingBeans[yPos] != null){
-			// if a bean is on the Galton Board at the indicated yPos, call get the beans x position
-			// since only one bean can be at a given y position, we only need an array the size of the number of slots to keep track of which beans are on the Galton board
-			return this.movingBeans[yPos].getXPos();
-		} else {
-			// otherwise there was no bean on the Galton Board at yPos
-			return NO_BEAN_IN_YPOS;
-		}	
+		int beanXPos = (yPos >= 0 && yPos < this.getSlotCount() && this.beansOnBoard[yPos] != null) ? this.beansOnBoard[yPos].getXPos() : NO_BEAN_IN_YPOS;
+		return beanXPos;
 	}
 
 	/**
@@ -108,13 +91,12 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @return number of beans in slot
 	 */
 	public int getSlotBeanCount(int i) {
-		// get the size of the LinkedList at slot i if i is within the range of possible slots
-		if(i >= 0 && i < getSlotCount()){
-			return this.slots[i].size();
-		} else {
-			// otherwise return 0 since the slot doesn't exist (e.g. there are no beans in a non-existing slot)
-			return 0;
+		int beansInIthSlot = 0;
+		if(i >= 0 && i < this.getSlotCount()){
+			this.beansInSlots.get(i).trimToSize();
+			beansInIthSlot = this.beansInSlots.get(i).size();
 		}
+		return beansInIthSlot;
 	}
 
 	/**
@@ -123,16 +105,14 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @return Average slot number of all the beans in slots.
 	 */
 	public double getAverageSlotBeanCount() {
-		int totalInSlots = 0;
-		double averageSlotNum = 0.0;
+		double avg = 0.0;
+		int totalBeansInSlots = 0;
 		for(int i=0; i < this.getSlotCount(); i++){
-			totalInSlots += this.getSlotBeanCount(i);
-			averageSlotNum += (this.getSlotBeanCount(i) * i);
+			avg += (this.getSlotBeanCount(i) * i);
+			totalBeansInSlots += this.getSlotBeanCount(i);
 		}
-		if(totalInSlots > 0){
-			averageSlotNum /= totalInSlots;
-		}
-		return averageSlotNum;
+		avg = (totalBeansInSlots > 0) ? (avg / totalBeansInSlots) : 0.0;
+		return avg;
 	}
 
 	/**
@@ -142,24 +122,17 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * will be remaining.
 	 */
 	public void upperHalf() {
-		// First, determine the total number of beans in the slots
-		int totalBeansInSlots = 0;
-
-		// iterate through the slots, adding the total beans in each slot to the running total
-		for(int i=0; i < getSlotCount(); i++){
-			totalBeansInSlots += getSlotBeanCount(i);
+		int beansToRemove = 0;
+		for(int i=0; i < this.getSlotCount(); i++){
+			beansToRemove += this.getSlotBeanCount(i);
 		}
-
-		// now that we have the total number of beans in the slots we need to determine how many beans to remove
-		// if there is an even number of beans in the slots then just remove half, otherwise remove (n-1)/2 beans
-		int beansToRemove = (totalBeansInSlots % 2) == 0 ? (totalBeansInSlots/2) : ((totalBeansInSlots-1)/2);
-
-		// start removing beans from slots starting at the lower end of the slots while there are still beans to remove
-		for(int i=0; i < getSlotCount(); i++){
-			// while there are beans still in the current linkedlist and there are still beans to remove
-			while((!this.slots[i].isEmpty()) && beansToRemove > 0){
-				this.slots[i].pop(); // remove a bean from the slot
-				beansToRemove--; // one less bean to remove
+		beansToRemove = ((beansToRemove % 2) == 0) ? (beansToRemove / 2) : ((beansToRemove-1)/2);
+		for(int i=(this.getSlotCount()-1); i >= 0; i--){
+			while((this.beansInSlots.get(i).size() > 0) && (beansToRemove > 0)){
+				int lastElem = this.beansInSlots.get(i).size() - 1;
+				this.beansInSlots.get(i).remove(lastElem);
+				this.beansInSlots.get(i).trimToSize();
+				beansToRemove--;
 			}
 			if(beansToRemove == 0)
 				break;
@@ -173,23 +146,16 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * will be remaining.
 	 */
 	public void lowerHalf() {
-		// First, determine the total number of beans in the slots
-		int totalBeansInSlots = 0;
-
-		// iterate through the slots, adding the total beans in each slot to the running total
-		for(int i=0; i < this.slots.length; i++){
-			totalBeansInSlots += getSlotBeanCount(i);
+		int beansToRemove = 0;
+		for(int i=0; i < this.getSlotCount(); i++){
+			beansToRemove += this.getSlotBeanCount(i);
 		}
-
-		// now that we have the total number of beans in the slots we need to determine how many beans to remove
-		// if there is an even number of beans in the slots then just remove half, otherwise remove (n-1)/2 beans
-		int beansToRemove = (totalBeansInSlots % 2) == 0 ? (totalBeansInSlots/2) : ((totalBeansInSlots-1)/2);
-
-		// start removing beans from slots starting at the upper end of the slots while there are still beans to remove
-		for(int i = getSlotCount() - 1; i >= 0; i--){
-			// while there are beans still in the current linkedlist and there are still beans to remove
-			while((!this.slots[i].isEmpty()) && beansToRemove > 0){
-				this.slots[i].pop();
+		beansToRemove = ((beansToRemove % 2) == 0) ? (beansToRemove / 2) : ((beansToRemove-1)/2);
+		for(int i=0; i < this.getSlotCount(); i++){
+			while((this.beansInSlots.get(i).size() > 0) && (beansToRemove > 0)){
+				int lastElem = this.beansInSlots.get(i).size() - 1;
+				this.beansInSlots.get(i).remove(lastElem);
+				this.beansInSlots.get(i).trimToSize();
 				beansToRemove--;
 			}
 			if(beansToRemove == 0)
@@ -204,24 +170,21 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @param beans array of beans to add to the machine
 	 */
 	public void reset(Bean[] beans) {
-		// first remove all beans from the slots
-		// and remove all beans on the Galton Board
-		for(int i=0; i < getSlotCount(); i++){
-			this.slots[i].clear();
-			this.movingBeans[i] = null;
+		this.beansOnBoard = new Bean[this.getSlotCount()];
+		this.remainingBeans = new ArrayList<Bean>();
+		this.beansInSlots = new ArrayList<>(this.getSlotCount());
+		for(int i=0; i < this.getSlotCount(); i++){
+			this.beansInSlots.add(new ArrayList<Bean>());
 		}
-
-		// clear all remaining beans
-		this.remainingBeans.clear();
-
-		// add all beans to remaining beans now that everything is cleared
 		for(int i=0; i < beans.length; i++){
 			this.remainingBeans.add(beans[i]);
-		}
+		}	
+		int lastElem = this.remainingBeans.size() - 1;
 
-		// remove a bean from remainingBeans if there are any remaining and add to top of Galton board
-		if(this.remainingBeans.size() > 0)
-			this.movingBeans[0] = this.remainingBeans.remove();
+		if(lastElem >= 0){
+			this.beansOnBoard[0] = this.remainingBeans.remove(lastElem);
+		}
+		this.remainingBeans.trimToSize();
 	}
 
 	/**
@@ -230,18 +193,22 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * beginning, the machine starts with one bean at the top.
 	 */
 	public void repeat() {
-		// remove all beans from slots and add to remainingBeans
-		// also remove all beans on the Galton Board
-		for(int i=0; i < getSlotCount(); i++){
-			this.remainingBeans.addAll(this.slots[i]);
-			this.slots[i].clear();
-			this.remainingBeans.add(this.movingBeans[i]);
-			this.movingBeans[i] = null;
+		for(int i=0; i < this.getSlotCount(); i++){
+			while(!this.beansInSlots.get(i).isEmpty()){
+				this.beansInSlots.get(i).trimToSize();
+				int lastElem = this.beansInSlots.get(i).size() - 1;
+				this.remainingBeans.add(this.beansInSlots.get(i).remove(lastElem));
+			}
+			if(this.beansOnBoard[i] != null){
+				this.remainingBeans.add(this.beansOnBoard[i]);
+				this.beansOnBoard[i] = null;
+			}
 		}
-
-		// remove bean from remainingBeans and add to top of Galton board
-		if(this.remainingBeans.size() > 0)
-			this.movingBeans[0] = this.remainingBeans.remove();
+		int lastElem = this.remainingBeans.size() - 1;
+		if(lastElem >= 0){
+			this.beansOnBoard[0] = this.remainingBeans.remove(lastElem);
+		}
+		this.remainingBeans.trimToSize();
 	}
 
 	/**
@@ -253,35 +220,29 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 *         means the machine is finished.
 	 */
 	public boolean advanceStep() {
-		boolean result = false;
-		// increment each beans position on Galton Board, only one bean can be at a given y position at a time
-		// start from bottom of board and move towards top
-		for(int i=(getSlotCount()-1); i >= 0; i--){
-			Bean b = movingBeans[i];
-			// if there is a bean in this y-position move it appropriately
+		boolean statusChange = false;
+		for(int i = (this.beansOnBoard.length - 1); i >= 0; i--){
+			Bean b = this.beansOnBoard[i];
 			if(b != null){
-				// if bean is falling off of the last row, add to slot[beans x position], also remove the bean from the Galton board
-				if(i == (getSlotCount()-1)){
-					this.slots[b.getXPos()].add(b);
+				if(i == (this.getSlotCount()-1)){
+					if(b.getXPos() >= 0 && b.getXPos() < this.getSlotCount()){
+						this.beansInSlots.get(b.getXPos()).add(b);
+					}
 				} else {
-					// otherwise have the bean choose whether to go left or right, and increment its position in the movingBeans array
 					b.choose();
-					movingBeans[i+1] = b;
+					this.beansOnBoard[i+1] = b;
 				}
-				movingBeans[i] = null;
-				result = true;
-			} else if(i < (getSlotCount()-1)) {
-				// if there was not a bean in that y-position, then there won't be a bean in the next y position
-				this.movingBeans[i+1] = null;
+				statusChange = true;
+			} else if(b == null && i < (this.getSlotCount() - 1)){
+				this.beansOnBoard[i+1] = null;
 			}
 		}
-
-		// after finished moving all the beans on the board, add another bean to the top if there are beans remaining
-		if(this.remainingBeans.size() > 0){
-			this.movingBeans[0] = this.remainingBeans.remove();
+		int lastElem = this.remainingBeans.size() - 1;
+		if(lastElem >= 0){
+			this.beansOnBoard[0] = this.remainingBeans.remove(lastElem);
 		}
-
-		return result;
+		this.remainingBeans.trimToSize();
+		return statusChange;
 	}
 	
 	/**
