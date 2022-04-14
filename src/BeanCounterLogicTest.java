@@ -2,6 +2,10 @@ import java.util.Random;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import static org.junit.Assert.*;
+import org.junit.*;
+import org.mockito.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Code by @author Wonsun Ahn
