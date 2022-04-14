@@ -203,6 +203,13 @@ public class GradeScopeTest {
 	@Test
 	public void testAdvanceStepSkillMode() {
 		// TODO: Implement
+		rand = Mockito.mock(Random.class);
+		Mockito.when(rand.nextGaussian()).thenReturn(0.0);
+		Bean[] beans = createBeans(10, 200, false);
+		logics[1].reset(beans);
+		while(logics[1].advanceStep());
+		assertEquals(logics[1].getSlotBeanCount(5), 200);
+		assertEquals(logics[1].getSlotBeanCount(0), 0);
 	}
 
 	/**
@@ -221,6 +228,28 @@ public class GradeScopeTest {
 	@Test
 	public void testLowerHalf() {
 		// TODO: Implement
+		for(int beanCount : beanCounts){
+			Bean[] luckyBeans = createBeans(logics[1].getSlotCount(), beanCount, true);
+			logics[1].reset(luckyBeans);
+			while(logics[1].advanceStep());
+			int[] expectedSlotCounts = new int[logics[1].getSlotCount()];
+			for(int i=0; i < logics[1].getSlotCount(); i++){
+				if(i < (logics[1].getSlotCount()/2)){
+					expectedSlotCounts[i] = logics[1].getSlotBeanCount(i);
+				} else {
+					expectedSlotCounts[i] = 0;
+				}
+			}
+			logics[1].lowerHalf();
+			int[] observedSlotCounts = new int[logics[1].getSlotCount()];
+			for(int i=0; i < logics[1].getSlotCount(); i++){
+				observedSlotCounts[i] = logics[1].getSlotBeanCount(i);
+			}
+
+			for(int i=0; i < logics[1].getSlotCount(); i++){
+				assertEquals(expectedSlotCounts[i], observedSlotCounts[i]);
+			}
+		}
 	}
 
 	/**
@@ -239,6 +268,28 @@ public class GradeScopeTest {
 	@Test
 	public void testUpperHalf() {
 		// TODO: Implement
+		for(int beanCount : beanCounts){
+			Bean[] beans = createBeans(logics[1].getSlotCount(), beanCount, true);
+			logics[1].reset(beans);
+			while(logics[1].advanceStep());
+			int[] expectedSlotCounts = new int[logics[1].getSlotCount()];
+			for(int i=0; i < logics[1].getSlotCount(); i++){
+				if(i >= (logics[1].getSlotCount()/2)){
+					expectedSlotCounts[i] = logics[1].getSlotBeanCount(i);
+				} else {
+					expectedSlotCounts[i] = 0;
+				}
+			}
+			logics[1].upperHalf();
+			int[] observedSlotCounts = new int[logics[1].getSlotCount()];
+			for(int i=0; i < logics[1].getSlotCount(); i++){
+				observedSlotCounts[i] = logics[1].getSlotBeanCount(i);
+			}
+
+			for(int i=0; i < logics[1].getSlotCount(); i++){
+				assertEquals(expectedSlotCounts[i], observedSlotCounts[i]);
+			}
+		}
 	}
 
 	/**
@@ -257,6 +308,25 @@ public class GradeScopeTest {
 	@Test
 	public void testRepeat() {
 		// TODO: Implement
+		for(int beanCount : beanCounts){
+			//createBeans(int slotCount, int beanCount, boolean luck)
+			Bean[] beans = createBeans(logics[1].getSlotCount(), beanCount, false);
+			logics[1].reset(bean);
+			while(logics[1].advanceStep());
+			int[] expectedSlotCounts = new int[logics[1].getSlotCount()];
+			for(int i=0 i < logics[1].getSlotCount(); i++){
+				expectedSlotCounts[i] = logics[1].getSlotBeanCount(i);
+			}
+			logics[1].repeat();
+			while(logics[1].advanceStep());
+			int[] observedSlotCounts = new int[logics[1].getSlotCount()];
+			for(int i=0 i < logics[1].getSlotCount(); i++){
+				observedSlotCounts[i] = logics[1].getSlotBeanCount(i);
+			}
+			for(int i=0; i < logics[1].getSlotCount(); i++){
+				assertEquals(expectedSlotCounts[i], observedSlotCounts[i]);
+			}
+		}
 	}
 
 	/**
@@ -275,6 +345,23 @@ public class GradeScopeTest {
 	@Test
 	public void testGetAverageSlotBeanCount() {
 		// TODO: Implement
+		Bean[] beans = createBeans(logics[1].getSlotCount(), 200, true);
+		logics[1].reset(beans);
+		while(logics[1].advanceStep());
+		double expectedAverage = 0.0;
+		int totalInSlots = 0;
+		for(int i=0; i < logics[1].getSlotCount(); i++){
+			expectedAverage += (i * logics[1].getSlotBeanCount(i));
+			totalInSlots += logics[1].getSlotBeanCount(i);
+		}
+		if(totalInSlots > 0){
+			expectedAverage /= totalInSlots;
+		}
+		double observedAverage = logics[1].testGetAverageSlotBeanCount();
+		assertEquals(expectedAverage, observedAverage);
+		double idealAverage = 4.5;
+		assertTrue(Math.abs(expectedAverage - observedAverage) < 0.01);
+		assertTrue(Math.abs(idealAverage - observedAverage) < 0.5);
 	}
 
 	/**

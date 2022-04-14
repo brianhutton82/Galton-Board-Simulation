@@ -123,20 +123,16 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @return Average slot number of all the beans in slots.
 	 */
 	public double getAverageSlotBeanCount() {
-		// the average number of beans will be the total of beans in slots divided by the total number of slots
-		int numerator = 0;
-		double denominator = 0.0;
+		int totalInSlots = 0;
+		double averageSlotNum = 0.0;
 		for(int i=0; i < this.getSlotCount(); i++){
-			numerator += (i * getSlotBeanCount(i));
-			denominator += getSlotBeanCount(i);
+			totalInSlots += this.getSlotBeanCount(i);
+			averageSlotNum += this.getSlotBeanCount(i) * i;
 		}
-
-		// we don't want to divide by zero... the whole world may implode
-		if(denominator > 0){
-			return denominator / numerator;
-		} else {
-			return 0;
+		if(totalInSlots > 0){
+			averagetSlotNum /= totalInSlots;
 		}
+		return averageSlotNum;
 	}
 
 	/**
