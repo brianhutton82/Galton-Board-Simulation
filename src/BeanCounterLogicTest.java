@@ -106,7 +106,7 @@ public class BeanCounterLogicTest {
 		}
 
 		for(int i=0; i < slotCount; i++){
-			assertEquals(0, logic.getSlotCount(i));
+			assertEquals(0, logic.getSlotBeanCount(i));
 		}
 		System.out.println(failString);
 	}
@@ -149,7 +149,7 @@ public class BeanCounterLogicTest {
 				if(logic.getInFlightBeanXPos(i) != -1){
 					total++;
 				}
-				total += logic.getSlotBeancount(i);
+				total += logic.getSlotBeanCount(i);
 			}
 			assertEquals(total + logic.getRemainingBeanCount(), beanCount);
 		}

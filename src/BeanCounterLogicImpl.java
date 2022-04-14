@@ -127,10 +127,10 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 		double averageSlotNum = 0.0;
 		for(int i=0; i < this.getSlotCount(); i++){
 			totalInSlots += this.getSlotBeanCount(i);
-			averageSlotNum += this.getSlotBeanCount(i) * i;
+			averageSlotNum += (this.getSlotBeanCount(i) * i);
 		}
 		if(totalInSlots > 0){
-			averagetSlotNum /= totalInSlots;
+			averageSlotNum /= totalInSlots;
 		}
 		return averageSlotNum;
 	}
