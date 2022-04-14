@@ -1,10 +1,11 @@
+import gov.nasa.jpf.vm.Verify;
 import java.util.Random;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+//import org.junit.*;
+//import org.mockito.*;
 import static org.junit.Assert.*;
-import org.junit.*;
-import org.mockito.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -20,7 +21,6 @@ public class BeanCounterLogicTest {
 	private static BeanCounterLogic logic; // The core logic of the program
 	private static Bean[] beans; // The beans in the machine
 	private static String failString; // A descriptive fail string for assertions
-
 	private static int slotCount; // The number of slots in the machine we want to test
 	private static int beanCount; // The number of beans in the machine we want to test
 	private static boolean isLuck; // Whether the machine we want to test is in "luck" or "skill" mode
@@ -42,6 +42,9 @@ public class BeanCounterLogicTest {
 			 * how to use the Verify API, look at:
 			 * https://github.com/javapathfinder/jpf-core/wiki/Verify-API-of-JPF
 			 */
+			slotCount = Verify.getInt(1, 5);
+			beanCount = Verify.getInt(0, 3);
+			isLuck = Verify.getBoolean();
 		} else {
 			assert (false);
 		}
@@ -97,18 +100,24 @@ public class BeanCounterLogicTest {
 		logic.reset(beans);
 		if(beanCount > 0){
 			assertEquals(beanCount - 1, logic.getRemainingBeanCount());
-			assertEquals(logic.getInFlightBeanXPos(0), 0);
-		}
-
-		if(beanCount == 0){
+			for (int i = 0; i < slotCount; i++) {
+				assertEquals(0, logic.getSlotBeanCount(i));
+				int xpos = logic.getInFlightBeanXPos(i);
+				if (i > 0) {
+					assertEquals(BeanCounterLogic.NO_BEAN_IN_YPOS, xpos);
+				} else {
+					assertNotEquals(BeanCounterLogic.NO_BEAN_IN_YPOS, xpos);
+				}
+			}
+			
+		} else {
 			assertEquals(0, logic.getRemainingBeanCount());
-			assertEquals(-1, logic.getInFlightBeanXPos(0));
+			for (int i = 0; i < slotCount; i++) {
+				int xpos = logic.getInFlightBeanXPos(i);
+				assertEquals(0, logic.getSlotBeanCount(i));
+				assertNotEquals(BeanCounterLogic.NO_BEAN_IN_YPOS, xpos);
+			}
 		}
-
-		for(int i=0; i < slotCount; i++){
-			assertEquals(0, logic.getSlotBeanCount(i));
-		}
-		System.out.println(failString);
 	}
 
 	/**
@@ -123,10 +132,12 @@ public class BeanCounterLogicTest {
 	public void testAdvanceStepCoordinates() {
 		// TODO: Implement
 		logic.reset(beans);
-		while(logic.advanceStep()){
-			for(int i=0; i < slotCount; i++){
-				assertTrue(logic.getInFlightBeanXPos(i) < slotCount);
-				assertTrue(logic.getInFlightBeanXPos(i) > -2);
+		while (logic.advanceStep()) {
+			for (int i = 0; i < slotCount; i++) {
+				int xpos = logic.getInFlightBeanXPos(i);
+				if (xpos >= 0) {
+					assertTrue(xpos <= i);
+				}
 			}
 		}
 	}
@@ -143,15 +154,16 @@ public class BeanCounterLogicTest {
 	public void testAdvanceStepBeanCount() {
 		// TODO: Implement
 		logic.reset(beans);
-		while(logic.advanceStep()){
-			int total = 0;
-			for(int i=0; i < slotCount; i++){
-				if(logic.getInFlightBeanXPos(i) != -1){
-					total++;
+		while (logic.advanceStep()) {
+			int currentCount = logic.getRemainingBeanCount();
+			for (int i = 0; i < slotCount; i++) {
+				currentCount += logic.getSlotBeanCount(i);
+				if(logic.getInFlightBeanXPos(i) != BeanCounterLogic.NO_BEAN_IN_YPOS){
+					currentCount += 1;
 				}
 				total += logic.getSlotBeanCount(i);
 			}
-			assertEquals(total + logic.getRemainingBeanCount(), beanCount);
+			assertEquals(currentCount, beanCount);
 		}
 	}
 
