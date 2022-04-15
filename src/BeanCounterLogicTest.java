@@ -75,26 +75,23 @@ public class BeanCounterLogicTest {
 	@Test
 	public void testReset() {
 		logic.reset(beans);
+		int inSlotBeanCount = 0;
+		int inFlightBeanCount = 0;
+		int remainingBeanCount = logic.getRemainingBeanCount();
+		for (int i = 0; i < logic.getSlotCount(); i++) {
+			if (logic.getInFlightBeanXPos(i) != NO_BEAN_IN_YPOS) {
+				inFlightBeanCount++;
+			}
+			inSlotBeanCount += logic.getSlotBeanCount(i);
+		}
 		if (beanCount > 0) {
-			assertEquals(beanCount - 1, logic.getRemainingBeanCount());
-			assertEquals()
-			for (int i = 0; i < slotCount; i++) {
-				assertEquals(0, logic.getSlotBeanCount(i));
-				int xpos = logic.getInFlightBeanXPos(i);
-				if (i > 0) {
-					assertEquals(BeanCounterLogic.NO_BEAN_IN_YPOS, xpos);
-				} else {
-					assertNotEquals(BeanCounterLogic.NO_BEAN_IN_YPOS, xpos);
-				}
-			}
-			
+			assertEquals(inSlotBeanCount, 0);
+			assertEquals(inFlightBeanCount, 1);
+			assertEquals(remainingBeanCount, (beanCount - 1));
 		} else {
-			assertEquals(0, logic.getRemainingBeanCount());
-			for (int i = 0; i < slotCount; i++) {
-				int xpos = logic.getInFlightBeanXPos(i);
-				assertEquals(0, logic.getSlotBeanCount(i));
-				assertNotEquals(BeanCounterLogic.NO_BEAN_IN_YPOS, xpos);
-			}
+			assertEquals(inSlotBeanCount, 0);
+			assertEquals(inFlightBeanCount, 0);
+			assertEquals(remainingBeanCount, 0);
 		}
 	}
 
@@ -108,10 +105,9 @@ public class BeanCounterLogicTest {
 	 */
 	@Test
 	public void testAdvanceStepCoordinates() {
-		// TODO: Implement
 		logic.reset(beans);
 		while (logic.advanceStep()) {
-			for (int i = 0; i < slotCount; i++) {
+			for (int i = 0; i < logic.getSlotCount(); i++) {
 				int xpos = logic.getInFlightBeanXPos(i);
 				if (xpos >= 0) {
 					assertTrue(xpos <= i);
@@ -130,18 +126,16 @@ public class BeanCounterLogicTest {
 	 */
 	@Test
 	public void testAdvanceStepBeanCount() {
-		// TODO: Implement
 		logic.reset(beans);
 		while (logic.advanceStep()) {
-			int currentCount = logic.getRemainingBeanCount();
-			for (int i = 0; i < slotCount; i++) {
-				currentCount += logic.getSlotBeanCount(i);
-				if (logic.getInFlightBeanXPos(i) != BeanCounterLogic.NO_BEAN_IN_YPOS) {
-					currentCount += 1;
+			int allBeansCount = logic.getRemainingBeanCount();
+			for (int i = 0; i < logic.getSlotCount(); i++) {
+				allBeansCount += logic.getSlotBeanCount(i);
+				if (logic.getInFlightBeanXPos(i) >= 0) {
+					allBeansCount += 1;
 				}
-				currentCount += logic.getSlotBeanCount(i);
 			}
-			assertEquals(currentCount, beanCount);
+			assertEquals(allBeansCount, beanCount);
 		}
 	}
 
@@ -157,17 +151,21 @@ public class BeanCounterLogicTest {
 	 */
 	@Test
 	public void testAdvanceStepPostCondition() {
-		// TODO: Implement
 		logic.reset(beans);
-		while (logic.advanceStep());
-		assertEquals(logic.getRemainingBeanCount(), 0);
-		int total = 0;
-		for (int i = 0; i < slotCount; i++) {
-			int xpos = logic.getInFlightBeanXPos(i);
-			assertEquals(xpos, BeanCounterLogic.NO_BEAN_IN_YPOS);
-			total += logic.getSlotBeanCount(i);
+		while (logic.advanceStep()) {
 		}
-		assertEquals(total, beanCount);
+		int remainingBeanCount = logic.getRemainingBeanCount();
+		int inSlotBeanCount = 0;
+		int inFlightBeanCount = 0;
+		for (int i = 0; i < logic.getSlotCount(); i++) {
+			if (logic.getInFlightBeanXPos(i) >= 0) {
+				inFlightBeanCount++;
+			}
+			inSlotBeanCount += logic.getSlotBeanCount(i);
+		}
+		assertEquals(inSlotBeanCount, beanCount);
+		assertEquals(inFlightBeanCount, 0);
+		assertEquals(remainingBeanCount, 0);
 	}
 	
 	/**
@@ -187,31 +185,48 @@ public class BeanCounterLogicTest {
 	 */
 	@Test
 	public void testLowerHalf() {
-		// TODO: Implement
+		int halfCount = ((beanCount % 2) == 0) ? (beanCount / 2) : ((beanCount - 1) / 2);
+		int inSlotBeanCount = 0;
+		int inFlightBeanCount = 0;
+		int remainingBeanCount = 0;
+		int[] slotsExpected = new int[slotCount];
+		int counter = 0;
+		int observedInSlots = 0;
+
 		logic.reset(beans);
-		while (logic.advanceStep());
-		int[] slots = new int[slotCount];
-		for(int i=0; i < slotCount; i++){
-			slots[i] = logic.getSlotBeanCount(i);
+		while (logic.advanceStep()) {
+
+		}
+		remainingBeanCount = logic.getRemainingBeanCount();
+		for (int i = 0; i < logic.getSlotCount(); i++) {
+			if (logic.getInFlightBeanXPos(i) >= 0) {
+				inFlightBeanCount++;
+			}
+			inSlotBeanCount += logic.getSlotBeanCount(i);
+			slotsExpected[i] = logic.getSlotBeanCount(i);
 		}
 
-		int halfCount = beanCount / 2;
-
-		for (int i = slotCount - 1; i > 0; i--) {
-			if (halfCount - logic.getSlotBeanCount(i) > -1) {
-				slots[i] = 0;
-				halfCount -= logic.getSlotBeanCount(i);
-			} else {
-				slots[i] -= halfCount;
+		for (int i = (logic.getSlotCount() - 1); i >= 0; i--) {
+			while (slotsExpected[i] > 0 && counter < halfCount) {
+				slotsExpected[i]--;
+				counter++;
+			}
+			if (counter == halfCount) {
 				break;
 			}
 		}
 
+		assertEquals(inSlotBeanCount, beanCount);
+		assertEquals(inFlightBeanCount, 0);
+		assertEquals(remainingBeanCount, 0);
+
 		logic.lowerHalf();
-		int total = 0;
-		for (int i = 0; i < slotCount; i++) {
-			assertEquals(slots[i], logic.getSlotBeanCount(i));
+
+		for (int i = 0; i < logic.getSlotCount(); i++) {
+			assertEquals(slotsExpected[i], logic.getSlotBeanCount(i));
+			observedInSlots += logic.getSlotBeanCount(i);
 		}
+		assertEquals(observedInSlots, (beanCount - halfCount));
 	}
 	
 	/**
@@ -231,30 +246,48 @@ public class BeanCounterLogicTest {
 	 */
 	@Test
 	public void testUpperHalf() {
-		// TODO: Implement
+		int halfCount = ((beanCount % 2) == 0) ? (beanCount / 2) : ((beanCount - 1) / 2);
+		int inSlotBeanCount = 0;
+		int inFlightBeanCount = 0;
+		int remainingBeanCount = 0;
+		int[] slotsExpected = new int[slotCount];
+		int counter = 0;
+		int observedInSlots = 0;
+
 		logic.reset(beans);
-		while (logic.advanceStep());
-		int[] slots = new int[slotCount];
-		for (int i = 0; i < slotCount; i++) {
-			slots[i] = logic.getSlotBeanCount(i);
+		while (logic.advanceStep()) {
+
+		}
+		remainingBeanCount = logic.getRemainingBeanCount();
+		for (int i = 0; i < logic.getSlotCount(); i++) {
+			if (logic.getInFlightBeanXPos(i) >= 0) {
+				inFlightBeanCount++;
+			}
+			inSlotBeanCount += logic.getSlotBeanCount(i);
+			slotsExpected[i] = logic.getSlotBeanCount(i);
 		}
 
-		int halfCount = beanCount / 2;
-
-		for (int i=0; i < slotCount; i++) {
-			if (halfCount - logic.getSlotBeanCount(i) > -1) {
-				slots[i] = 0;
-				halfCount -= logic.getSlotBeanCount(i);
-			} else {
-				slots[i] -= halfCount;
+		for (int i = 0; i < logic.getSlotCount(); i++) {
+			while (slotsExpected[i] > 0 && counter < halfCount) {
+				slotsExpected[i]--;
+				counter++;
+			}
+			if (counter == halfCount) {
 				break;
 			}
 		}
+
+		assertEquals(inSlotBeanCount, beanCount);
+		assertEquals(inFlightBeanCount, 0);
+		assertEquals(remainingBeanCount, 0);
+
 		logic.upperHalf();
-		int total = 0;
-		for(int i=0; i < slotCount; i++){
-			assertEquals(slots[i], logic.getSlotBeanCount(i));
+
+		for (int i = 0; i < logic.getSlotCount(); i++) {
+			assertEquals(slotsExpected[i], logic.getSlotBeanCount(i));
+			observedInSlots += logic.getSlotBeanCount(i);
 		}
+		assertEquals(observedInSlots, (beanCount - halfCount));
 	}
 	
 	/**
@@ -268,18 +301,21 @@ public class BeanCounterLogicTest {
 	 */
 	@Test
 	public void testRepeat() {
+		int[] slotBeanCounts = new int[logic.getSlotCount()];
 		if (!isLuck) {
-			// TODO: Implement
 			logic.reset(beans);
-			while (logic.advanceStep());
-			int[] first = new int[slotCount];
-			for(int i = 0; i < slotCount; i++) {
-				first[i] = logic.getSlotBeanCount(i);
+			while (logic.advanceStep()) {
+
+			}
+			for (int i = 0; i < logic.getSlotCount(); i++) {
+				slotBeanCounts[i] = logic.getSlotBeanCount(i);
 			}
 			logic.repeat();
-			while (logic.advanceStep());
-			for(int i = 0; i < slotCount; i++) {
-				assertEquals(logic.getSlotBeanCount(i), first[i]);
+			while (logic.advanceStep()) {
+
+			}
+			for(int i = 0; i < logic.getSlotCount(); i++) {
+				assertEquals(slotBeanCounts[i], logic.getSlotBeanCount(i));
 			}
 		}
 	}
