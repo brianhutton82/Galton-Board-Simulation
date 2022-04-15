@@ -123,11 +123,16 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * will be remaining.
 	 */
 	public void upperHalf() {
+		int beansToRemove;
 		int totalBeansInSlots = 0;
 		for (int i = 0; i < getSlotCount(); i++) {
 			totalBeansInSlots += getSlotBeanCount(i);
 		}
-		int beansToRemove = ((totalBeansInSlots % 2) == 0) ? (totalBeansInSlots / 2) : ((totalBeansInSlots - 1) / 2);
+		if ((totalBeansInSlots % 2) == 0) {
+			beansToRemove = totalBeansInSlots / 2;
+		} else {
+			beansToRemove = (totalBeansInSlots - 1) / 2;
+		}
 		for (int i = 0; i < getSlotCount(); i++) {
 			while ((!beansInSlots[i].isEmpty()) && (beansToRemove > 0)) {
 				beansInSlots[i].removeLast();
@@ -146,11 +151,16 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * will be remaining.
 	 */
 	public void lowerHalf() {
+		int beansToRemove;
 		int totalBeansInSlots = 0;
 		for (int i = 0; i < getSlotCount(); i++) {
 			totalBeansInSlots += getSlotBeanCount(i);
 		}
-		int beansToRemove = ((totalBeansInSlots % 2) == 0) ? (totalBeansInSlots / 2) : ((totalBeansInSlots - 1) / 2);
+		if ((totalBeansInSlots % 2) == 0) {
+			beansToRemove = totalBeansInSlots / 2;
+		} else {
+			beansToRemove = (totalBeansInSlots - 1) / 2;
+		}
 		for (int i = (getSlotCount() - 1); i >= 0; i--) {
 			while ((!beansInSlots[i].isEmpty()) && (beansToRemove > 0)) {
 				beansInSlots[i].removeLast();
@@ -320,7 +330,6 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 		boolean luck;
 		int slotCount = 0;
 		int beanCount = 0;
-		//this.totalBeans = beanCount;
 
 		if (args.length != 3 && args.length != 4) {
 			showUsage();
