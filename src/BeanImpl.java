@@ -28,7 +28,6 @@ import java.util.Random;
 
 public class BeanImpl implements Bean {
 	
-	private int slotCount;
 	private int xpos;
 	private int skillLevel;
 	private int skillRemaining;
@@ -45,7 +44,6 @@ public class BeanImpl implements Bean {
 	 * @param rand		the random number generator
 	 */
 	BeanImpl(int slotCount, boolean isLuck, Random rand) {
-		this.slotCount = slotCount;
 		this.isLuck = isLuck;
  		this.rng = rand;
  		this.xpos = 0;

@@ -1,6 +1,7 @@
 import java.util.Formatter;
+import java.util.LinkedList;
+import java.util.Stack;
 import java.util.Random;
-import java.util.ArrayList;
 
 /**
  * Code by @author Wonsun Ahn
@@ -30,11 +31,10 @@ import java.util.ArrayList;
 public class BeanCounterLogicImpl implements BeanCounterLogic {
 	// Member variables & data structures
 	private int totalSlots;
-	private int xspacing;
 	private int totalBeans;
 	private Bean[] beansOnBoard;
-	private ArrayList<Bean> remainingBeans;
-	private ArrayList<ArrayList<Bean>> beansInSlots;
+	private Stack<Bean> remainingBeans;
+	private LinkedList<Bean>[] beansInSlots;
 
 	/**
 	 * Constructor - creates the bean counter logic object that implements the core
@@ -44,13 +44,12 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 */
 	BeanCounterLogicImpl(int slotCount) {
 		assert slotCount >= 0;
-		this.xspacing = 3;
 		this.totalSlots = slotCount;
 		this.beansOnBoard = new Bean[slotCount];
-		this.remainingBeans = new ArrayList<Bean>(slotCount);
-		this.beansInSlots = new ArrayList<>(slotCount);
+		this.remainingBeans = new Stack<Bean>();
+		this.beansInSlots = new LinkedList[slotCount];
 		for (int i = 0; i < slotCount; i++) {
-			this.beansInSlots.add(new ArrayList<Bean>());
+			this.beansInSlots[i] = new LinkedList<Bean>();
 		}
 	}
 
@@ -60,7 +59,7 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @return number of slots
 	 */
 	public int getSlotCount() {
-		return this.totalSlots;
+		return totalSlots;
 	}
 	
 	/**
@@ -69,8 +68,7 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @return number of beans remaining
 	 */
 	public int getRemainingBeanCount() {
-		int beansLeft = (this.remainingBeans != null) ? this.remainingBeans.size() : 0;
-		return beansLeft;
+		return remainingBeans.size();
 	}
 
 	/**
@@ -80,8 +78,11 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @return the x-coordinate of the in-flight bean; if no bean in y-coordinate, return NO_BEAN_IN_YPOS
 	 */
 	public int getInFlightBeanXPos(int yPos) {
-		int beanXPos = (yPos >= 0 && yPos < this.getSlotCount() && this.beansOnBoard[yPos] != null) ? this.beansOnBoard[yPos].getXPos() : NO_BEAN_IN_YPOS;
-		return beanXPos;
+		int xpos = NO_BEAN_IN_YPOS;
+		if (yPos >= 0 && yPos < getSlotCount() && beansOnBoard[yPos] != null) {
+			xpos = beansOnBoard[yPos].getXPos();
+		}
+		return xpos;
 	}
 
 	/**
@@ -92,9 +93,8 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 */
 	public int getSlotBeanCount(int i) {
 		int beansInIthSlot = 0;
-		if (i >= 0 && i < this.getSlotCount()) {
-			this.beansInSlots.get(i).trimToSize();
-			beansInIthSlot = this.beansInSlots.get(i).size();
+		if (i >= 0 && i < getSlotCount()) {
+			beansInIthSlot = beansInSlots[i].size();
 		}
 		return beansInIthSlot;
 	}
@@ -106,12 +106,13 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 */
 	public double getAverageSlotBeanCount() {
 		double avg = 0.0;
+		double runningTotal = 0.0;
 		int totalBeansInSlots = 0;
-		for (int i = 0; i < this.getSlotCount(); i++) {
-			avg += (this.getSlotBeanCount(i) * i);
-			totalBeansInSlots += this.getSlotBeanCount(i);
+		for (int i = 0; i < getSlotCount(); i++) {
+			runningTotal += (getSlotBeanCount(i) * i);
+			totalBeansInSlots += getSlotBeanCount(i);
 		}
-		avg = (totalBeansInSlots > 0) ? (avg / totalBeansInSlots) : 0.0;
+		avg = (totalBeansInSlots > 0) ? (runningTotal / totalBeansInSlots) : 0.0;
 		return avg;
 	}
 
@@ -122,20 +123,19 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * will be remaining.
 	 */
 	public void upperHalf() {
-		int beansToRemove = 0;
-		for(int i = 0; i < this.getSlotCount(); i++) {
-			beansToRemove += this.getSlotBeanCount(i);
+		int totalBeansInSlots = 0;
+		for (int i = 0; i < getSlotCount(); i++) {
+			totalBeansInSlots += getSlotBeanCount(i);
 		}
-		beansToRemove = ((beansToRemove % 2) == 0) ? (beansToRemove / 2) : ((beansToRemove - 1) / 2);
-		for (int i = (this.getSlotCount() - 1); i >= 0; i--) {
-			while ((this.beansInSlots.get(i).size() > 0) && (beansToRemove > 0)) {
-				int lastElem = this.beansInSlots.get(i).size() - 1;
-				this.beansInSlots.get(i).remove(lastElem);
-				this.beansInSlots.get(i).trimToSize();
+		int beansToRemove = ((totalBeansInSlots % 2) == 0) ? (totalBeansInSlots / 2) : ((totalBeansInSlots - 1) / 2);
+		for (int i = 0; i < getSlotCount(); i++) {
+			while ((!beansInSlots[i].isEmpty()) && (beansToRemove > 0)) {
+				beansInSlots[i].removeLast();
 				beansToRemove--;
 			}
-			if (beansToRemove == 0)
+			if (beansToRemove == 0) {
 				break;
+			}
 		}
 	}
 
@@ -146,20 +146,19 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * will be remaining.
 	 */
 	public void lowerHalf() {
-		int beansToRemove = 0;
-		for (int i = 0; i < this.getSlotCount(); i++) {
-			beansToRemove += this.getSlotBeanCount(i);
+		int totalBeansInSlots = 0;
+		for (int i = 0; i < getSlotCount(); i++) {
+			totalBeansInSlots += getSlotBeanCount(i);
 		}
-		beansToRemove = ((beansToRemove % 2) == 0) ? (beansToRemove / 2) : ((beansToRemove - 1) / 2);
-		for (int i = 0; i < this.getSlotCount(); i++) {
-			while ((this.beansInSlots.get(i).size() > 0) && (beansToRemove > 0)) {
-				int lastElem = this.beansInSlots.get(i).size() - 1;
-				this.beansInSlots.get(i).remove(lastElem);
-				this.beansInSlots.get(i).trimToSize();
+		int beansToRemove = ((totalBeansInSlots % 2) == 0) ? (totalBeansInSlots / 2) : ((totalBeansInSlots - 1) / 2);
+		for (int i = (getSlotCount() - 1); i >= 0; i--) {
+			while ((!beansInSlots[i].isEmpty()) && (beansToRemove > 0)) {
+				beansInSlots[i].removeLast();
 				beansToRemove--;
 			}
-			if (beansToRemove == 0)
+			if (beansToRemove == 0) {
 				break;
+			}
 		}
 	}
 
@@ -170,21 +169,18 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @param beans array of beans to add to the machine
 	 */
 	public void reset(Bean[] beans) {
-		this.beansOnBoard = new Bean[this.getSlotCount()];
-		this.remainingBeans = new ArrayList<Bean>();
-		this.beansInSlots = new ArrayList<>(this.getSlotCount());
-		for (int i = 0; i < this.getSlotCount(); i++) {
-			this.beansInSlots.add(new ArrayList<Bean>());
+		beansOnBoard = new Bean[getSlotCount()];
+		remainingBeans = new Stack<Bean>();
+		beansInSlots = new LinkedList[getSlotCount()];
+		for (int i = 0; i < getSlotCount(); i++) {
+			beansInSlots[i] = new LinkedList<Bean>();
 		}
 		for (int i = 0; i < beans.length; i++) {
-			this.remainingBeans.add(beans[i]);
+			remainingBeans.push(beans[i]);
 		}	
-		int lastElem = this.remainingBeans.size() - 1;
-
-		if (lastElem >= 0) {
-			this.beansOnBoard[0] = this.remainingBeans.remove(lastElem);
+		if (!remainingBeans.isEmpty()) {
+			beansOnBoard[0] = remainingBeans.pop();
 		}
-		this.remainingBeans.trimToSize();
 	}
 
 	/**
@@ -193,22 +189,18 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * beginning, the machine starts with one bean at the top.
 	 */
 	public void repeat() {
-		for (int i = 0; i < this.getSlotCount(); i++) {
-			while (!this.beansInSlots.get(i).isEmpty()) {
-				this.beansInSlots.get(i).trimToSize();
-				int lastElem = this.beansInSlots.get(i).size() - 1;
-				this.remainingBeans.add(this.beansInSlots.get(i).remove(lastElem));
+		for (int i = 0; i < getSlotCount(); i++) {
+			while (!beansInSlots[i].isEmpty()) {
+				remainingBeans.push(beansInSlots[i].removeLast());
 			}
-			if (this.beansOnBoard[i] != null) {
-				this.remainingBeans.add(this.beansOnBoard[i]);
-				this.beansOnBoard[i] = null;
+			if (beansOnBoard[i] != null) {
+				remainingBeans.push(beansOnBoard[i]);
+				beansOnBoard[i] = null;
 			}
 		}
-		int lastElem = this.remainingBeans.size() - 1;
-		if (lastElem >= 0) {
-			this.beansOnBoard[0] = this.remainingBeans.remove(lastElem);
+		if (!remainingBeans.isEmpty()) {
+			beansOnBoard[0] = remainingBeans.pop();
 		}
-		this.remainingBeans.trimToSize();
 	}
 
 	/**
@@ -221,27 +213,27 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 */
 	public boolean advanceStep() {
 		boolean statusChange = false;
-		for (int i = (this.beansOnBoard.length - 1); i >= 0; i--) {
-			Bean b = this.beansOnBoard[i];
+		for (int i = (getSlotCount() - 1); i >= 0; i--) {
+			Bean b = beansOnBoard[i];
 			if (b != null) {
-				if (i == (this.getSlotCount()-1)) {
-					if (b.getXPos() >= 0 && b.getXPos() < this.getSlotCount()) {
-						this.beansInSlots.get(b.getXPos()).add(b);
+				if (i == (getSlotCount() - 1)) {
+					if (b.getXPos() >= 0 && b.getXPos() < getSlotCount()) {
+						beansInSlots[b.getXPos()].add(b);
+						beansOnBoard[i] = null;
 					}
 				} else {
 					b.choose();
-					this.beansOnBoard[i+1] = b;
+					beansOnBoard[i + 1] = b;
+					beansOnBoard[i] = null;
 				}
 				statusChange = true;
-			} else if (b == null && i < (this.getSlotCount() - 1)) {
-				this.beansOnBoard[i+1] = null;
+			} else if ((b == null) && (i < (getSlotCount() - 1))) {
+				beansOnBoard[i + 1] = null;
 			}
 		}
-		int lastElem = this.remainingBeans.size() - 1;
-		if (lastElem >= 0) {
-			this.beansOnBoard[0] = this.remainingBeans.remove(lastElem);
+		if (!remainingBeans.isEmpty()) {
+			beansOnBoard[0] = remainingBeans.pop();
 		}
-		this.remainingBeans.trimToSize();
 		return statusChange;
 	}
 	
@@ -249,6 +241,7 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * Number of spaces in between numbers when printing out the state of the machine.
 	 * Make sure the number is odd (even numbers don't work as well).
 	 */
+	private int xspacing = 3;
 
 	/**
 	 * Calculates the number of spaces to indent for the given row of pegs.
