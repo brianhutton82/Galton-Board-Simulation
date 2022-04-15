@@ -1,7 +1,7 @@
 import java.util.Formatter;
 import java.util.LinkedList;
-import java.util.Stack;
 import java.util.Random;
+import java.util.Stack;
 
 /**
  * Code by @author Wonsun Ahn
@@ -288,8 +288,8 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 	 * @return the string representation of the machine
 	 */
 	@edu.umd.cs.findbugs.annotations.SuppressFBWarnings(
-		    value="VA_FORMAT_STRING_USES_NEWLINE", 
-		    justification="I know we should be using %n instead of \n, but JPF for some reason does not like %n")
+		    value = "VA_FORMAT_STRING_USES_NEWLINE", 
+		    justification = "I know we should be using %n instead of \n, but JPF for some reason does not like %n")
 	public String toString() {
 		StringBuilder bld = new StringBuilder();
 		Formatter fmt = new Formatter(bld);

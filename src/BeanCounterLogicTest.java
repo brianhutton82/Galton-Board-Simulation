@@ -3,10 +3,7 @@ import java.util.Random;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.*;
-import org.mockito.*;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Code by @author Wonsun Ahn
@@ -154,18 +151,19 @@ public class BeanCounterLogicTest {
 		logic.reset(beans);
 		while (logic.advanceStep()) {
 		}
-		int remainingBeanCount = logic.getRemainingBeanCount();
 		int inSlotBeanCount = 0;
 		int inFlightBeanCount = 0;
+		int remainingBeanCount = logic.getRemainingBeanCount();
 		for (int i = 0; i < slotCount; i++) {
 			if (logic.getInFlightBeanXPos(i) >= 0) {
 				inFlightBeanCount++;
 			}
 			inSlotBeanCount += logic.getSlotBeanCount(i);
 		}
+		assertEquals(remainingBeanCount, 0);
 		assertEquals(inSlotBeanCount, beanCount);
 		assertEquals(inFlightBeanCount, 0);
-		assertEquals(remainingBeanCount, 0);
+		
 	}
 	
 	/**
@@ -314,7 +312,7 @@ public class BeanCounterLogicTest {
 			while (logic.advanceStep()) {
 
 			}
-			for(int i = 0; i < slotCount; i++) {
+			for (int i = 0; i < slotCount; i++) {
 				assertEquals(slotBeanCounts[i], logic.getSlotBeanCount(i));
 			}
 		}
