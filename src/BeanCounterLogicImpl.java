@@ -237,7 +237,7 @@ public class BeanCounterLogicImpl implements BeanCounterLogic {
 					beansOnBoard[i] = null;
 				}
 				statusChange = true;
-			} else if ((b == null) && (i < (getSlotCount() - 1))) {
+			} else if (i < (getSlotCount() - 1)) {
 				beansOnBoard[i + 1] = null;
 			}
 		}
