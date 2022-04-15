@@ -50,8 +50,11 @@ public class BeanImpl implements Bean {
 		this.skillAverage = (double) (slotCount - 1) * 0.5;
  		this.skillStdDev = (double) Math.sqrt(slotCount * 0.5 * (1 - 0.5));
  		this.skillLevel = (int) Math.round(rand.nextGaussian() * this.skillStdDev + this.skillAverage);
- 		this.skillLevel = (this.skillLevel > (slotCount - 1)) ? (slotCount - 1) : this.skillLevel;
- 		this.skillLevel = (this.skillLevel < 0) ? 0 : this.skillLevel;
+ 		if (this.skillLevel > (slotCount - 1)) {
+ 			this.skillLevel = slotCount - 1;
+ 		} else if (this.skillLevel < 0) {
+ 			this.skillLevel = 0;
+ 		}
  		this.skillRemaining = this.skillLevel;
 	}
 	
@@ -61,7 +64,7 @@ public class BeanImpl implements Bean {
 	 * @return the current X-coordinate of the bean
 	 */
 	public int getXPos() {
-		return this.xpos;
+		return xpos;
 	}
 
 	/**
@@ -69,8 +72,8 @@ public class BeanImpl implements Bean {
 	 * to 0. 
 	 */
 	public void reset() {
-		this.skillRemaining = this.skillLevel;
-		this.xpos = 0;
+		skillRemaining = skillLevel;
+		xpos = 0;
 	}
 	
 	/**
@@ -79,14 +82,13 @@ public class BeanImpl implements Bean {
 	 * right.  The X-coordinate is updated accordingly.
 	 */
 	public void choose() {
-		if (this.isLuck) {
-			int leftOrRight = this.rng.nextInt(2);
-			if (leftOrRight == 1) {
-				this.xpos++;
+		if (isLuck) {
+			if (rng.nextInt(2) == 1) {
+				xpos++;
 			}
-		} else if (this.skillRemaining > 0) {
-			this.xpos++;
-			this.skillLevel--;
+		} else if (skillRemaining > 0) {
+			xpos++;
+			skillRemaining--;
 		}
 	}
 }

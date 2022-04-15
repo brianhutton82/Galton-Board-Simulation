@@ -3,8 +3,8 @@ import java.util.Random;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-//import org.junit.*;
-//import org.mockito.*;
+import org.junit.*;
+import org.mockito.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -35,13 +35,6 @@ public class BeanCounterLogicTest {
 			beanCount = 3;
 			isLuck = true;
 		} else if (Config.getTestType() == TestType.JPF_ON_JUNIT) {
-			/*
-			 * TODO: Use the Java Path Finder Verify API to generate choices for slotCount,
-			 * beanCount, and isLuck: slotCount should take values 1-5, beanCount should
-			 * take values 0-3, and isLucky should be either true or false. For reference on
-			 * how to use the Verify API, look at:
-			 * https://github.com/javapathfinder/jpf-core/wiki/Verify-API-of-JPF
-			 */
 			slotCount = Verify.getInt(1, 5);
 			beanCount = Verify.getInt(0, 3);
 			isLuck = Verify.getBoolean();
@@ -81,25 +74,10 @@ public class BeanCounterLogicTest {
 	 */
 	@Test
 	public void testReset() {
-		// TODO: Implement
-		/*
-		 * Currently, it just prints out the failString to demonstrate to you all the
-		 * cases considered by Java Path Finder. If you called the Verify API correctly
-		 * in setUp(), you should see all combinations of machines
-		 * (slotCount/beanCount/isLucky) printed here:
-		 * 
-		 * Failure in (slotCount=1, beanCount=0, isLucky=false):
-		 * Failure in (slotCount=1, beanCount=0, isLucky=true):
-		 * Failure in (slotCount=1, beanCount=1, isLucky=false):
-		 * Failure in (slotCount=1, beanCount=1, isLucky=true):
-		 * ...
-		 * 
-		 * PLEASE REMOVE when you are done implementing.
-		 */
-
 		logic.reset(beans);
 		if (beanCount > 0) {
 			assertEquals(beanCount - 1, logic.getRemainingBeanCount());
+			assertEquals()
 			for (int i = 0; i < slotCount; i++) {
 				assertEquals(0, logic.getSlotBeanCount(i));
 				int xpos = logic.getInFlightBeanXPos(i);
