@@ -995,3 +995,4 @@ If you don't understand a CheckStyle warning, read the corresponding entry insid
 * SpotBugs reference:  
 https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html
 
+# Galton-Board-Simulation
